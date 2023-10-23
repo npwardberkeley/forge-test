@@ -66,9 +66,9 @@ contract Plonky2Verification {
     struct ExtraBlockData {
         bytes32 genesisStateTrieRoot;
         uint256 txnNumberBefore;
-        uint256 txnNumber_After;
+        uint256 txnNumberAfter;
         uint256 gasUsedBefore;
-        uint256 gasUsed_After;
+        uint256 gasUsedAfter;
         uint256[8] blockBloomBefore;
         uint256[8] blockBloomAfter;
     }
@@ -80,9 +80,9 @@ contract Plonky2Verification {
             abi.encodePacked(
                 extraBlockData.genesisStateTrieRoot,
                 extraBlockData.txnNumberBefore,
-                extraBlockData.txnNumber_After,
+                extraBlockData.txnNumberAfter,
                 extraBlockData.gasUsedBefore,
-                extraBlockData.gasUsed_After,
+                extraBlockData.gasUsedAfter,
                 extraBlockData.blockBloomBefore,
                 extraBlockData.blockBloomAfter
             );
