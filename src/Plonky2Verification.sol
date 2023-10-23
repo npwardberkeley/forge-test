@@ -9,7 +9,11 @@ contract Plonky2Verification {
     }
 
     function serializeTrieRoots(TrieRoots memory trieRoots) public pure {
-        abi.encodePacked(trieRoots.stateRoot, trieRoots.transactionsRoot, trieRoots.receiptsRoot);
+        abi.encodePacked(
+            trieRoots.stateRoot,
+            trieRoots.transactionsRoot,
+            trieRoots.receiptsRoot
+        );
     }
 
     struct BlockMetadata {
@@ -25,7 +29,9 @@ contract Plonky2Verification {
         uint256[8] blockBloom;
     }
 
-    function serializeBlockMetadata(BlockMetadata memory blockMetadata) public pure {
+    function serializeBlockMetadata(
+        BlockMetadata memory blockMetadata
+    ) public pure {
         abi.encodePacked(
             blockMetadata.blockBeneficiary,
             blockMetadata.blockTimestamp,
@@ -59,7 +65,9 @@ contract Plonky2Verification {
         uint256[8] blockBloomAfter;
     }
 
-    function serializeExtraBlockData(ExtraBlockData memory extraBlockData) public pure {
+    function serializeExtraBlockData(
+        ExtraBlockData memory extraBlockData
+    ) public pure {
         abi.encodePacked(
             extraBlockData.genesisStateTrieRoot,
             extraBlockData.txnNumberBefore,
@@ -67,7 +75,8 @@ contract Plonky2Verification {
             extraBlockData.gasUsedBefore,
             extraBlockData.gasUsed_After,
             extraBlockData.blockBloomBefore,
-            extraBlockData.blockBloomAfter);
+            extraBlockData.blockBloomAfter
+        );
     }
 
     struct PublicValues {
@@ -78,7 +87,9 @@ contract Plonky2Verification {
         ExtraBlockData extraBlockData;
     }
 
-    function serializePublicValues(PublicValues memory publicValues) public pure {
+    function serializePublicValues(
+        PublicValues memory publicValues
+    ) public pure {
         serializeTrieRoots(publicValues.trieRootsBefore);
         serializeTrieRoots(publicValues.trieRootsAfter);
         serializeBlockMetadata(publicValues.blockMetadata);
@@ -98,13 +109,51 @@ contract Plonky2Verification {
 
     constructor() {
         TrieRoots memory dummyTrieRootsBefore = TrieRoots(
-            bytesToBytes32(abi.encodePacked(uint256(0x92648889955b1d41b36ea681a16ef94852e34e6011d029f278439adb4e9e30b4))),
-            bytesToBytes32(abi.encodePacked(uint256(0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421))),
-            bytesToBytes32(abi.encodePacked(uint256(0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421))));
+            bytesToBytes32(
+                abi.encodePacked(
+                    uint256(
+                        0x92648889955b1d41b36ea681a16ef94852e34e6011d029f278439adb4e9e30b4
+                    )
+                )
+            ),
+            bytesToBytes32(
+                abi.encodePacked(
+                    uint256(
+                        0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
+                    )
+                )
+            ),
+            bytesToBytes32(
+                abi.encodePacked(
+                    uint256(
+                        0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
+                    )
+                )
+            )
+        );
         TrieRoots memory dummyTrieRootsAfter = TrieRoots(
-            bytesToBytes32(abi.encodePacked(uint256(0x049e45aef8dac161e0cec0edacd8af5b3399700affad6ede63b33c5d0ec796f5))),
-            bytesToBytes32(abi.encodePacked(uint256(0xc523d7b87c0e49a24dae53b3e3be716e5a6808c1e05216497655c0ad84b12236))),
-            bytesToBytes32(abi.encodePacked(uint256(0xfc047c9c96ea3d317bf5b0896e85c242ecc625efd3f7da721c439aff8331b2ab))));
+            bytesToBytes32(
+                abi.encodePacked(
+                    uint256(
+                        0x049e45aef8dac161e0cec0edacd8af5b3399700affad6ede63b33c5d0ec796f5
+                    )
+                )
+            ),
+            bytesToBytes32(
+                abi.encodePacked(
+                    uint256(
+                        0xc523d7b87c0e49a24dae53b3e3be716e5a6808c1e05216497655c0ad84b12236
+                    )
+                )
+            ),
+            bytesToBytes32(
+                abi.encodePacked(
+                    uint256(
+                        0xfc047c9c96ea3d317bf5b0896e85c242ecc625efd3f7da721c439aff8331b2ab
+                    )
+                )
+            )
+        );
         BlockMetadata memory dummyBlockMetadata = BlockMetadata(
             0x2ADC25665018Aa1FE0E6BC666DaC8Fc2697fF9bA,
             1000,
@@ -123,7 +172,9 @@ contract Plonky2Verification {
                 33554432,
                 9223372036854775808,
                 3618502788666131106986593281521497120414687020801267626233049500247285563392,
-                2722259584404615024560450425766186844160]);
+                2722259584404615024560450425766186844160
+            ]
+        );
 
         uint256 zero = 0x0;
         bytes32 encodedZero = bytesToBytes32(abi.encodePacked(zero));
@@ -134,14 +185,21 @@ contract Plonky2Verification {
         }
         BlockHashes memory dummyBlockHashes = BlockHashes(
             prevHashes,
-            encodedZero);
+            encodedZero
+        );
         ExtraBlockData memory dummyExtraBlockData = ExtraBlockData(
-            bytesToBytes32(abi.encodePacked(uint256(0x92648889955b1d41b36ea681a16ef94852e34e6011d029f278439adb4e9e30b4))),
+            bytesToBytes32(
+                abi.encodePacked(
+                    uint256(
+                        0x92648889955b1d41b36ea681a16ef94852e34e6011d029f278439adb4e9e30b4
+                    )
+                )
+            ),
             0,
             2,
             0,
             43570,
-            [ zero, zero, zero, zero, zero, zero, zero, zero ],
+            [zero, zero, zero, zero, zero, zero, zero, zero],
             [
                 0,
                 0,
@@ -150,13 +208,16 @@ contract Plonky2Verification {
                 33554432,
                 9223372036854775808,
                 3618502788666131106986593281521497120414687020801267626233049500247285563392,
-                2722259584404615024560450425766186844160]);
-        
+                2722259584404615024560450425766186844160
+            ]
+        );
+
         PublicValues memory dummyPublicValues = PublicValues(
             dummyTrieRootsBefore,
             dummyTrieRootsAfter,
             dummyBlockMetadata,
             dummyBlockHashes,
-            dummyExtraBlockData);
+            dummyExtraBlockData
+        );
     }
 }
