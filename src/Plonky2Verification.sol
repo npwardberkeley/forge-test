@@ -2,18 +2,23 @@
 pragma solidity ^0.8.13;
 
 contract Plonky2Verification {
+    PublicValues private dummyPublicValues;
+
     struct TrieRoots {
         bytes32 stateRoot;
         bytes32 transactionsRoot;
         bytes32 receiptsRoot;
     }
 
-    function serializeTrieRoots(TrieRoots memory trieRoots) public pure {
-        abi.encodePacked(
-            trieRoots.stateRoot,
-            trieRoots.transactionsRoot,
-            trieRoots.receiptsRoot
-        );
+    function serializeTrieRoots(
+        TrieRoots memory trieRoots
+    ) public pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                trieRoots.stateRoot,
+                trieRoots.transactionsRoot,
+                trieRoots.receiptsRoot
+            );
     }
 
     struct BlockMetadata {
@@ -31,19 +36,20 @@ contract Plonky2Verification {
 
     function serializeBlockMetadata(
         BlockMetadata memory blockMetadata
-    ) public pure {
-        abi.encodePacked(
-            blockMetadata.blockBeneficiary,
-            blockMetadata.blockTimestamp,
-            blockMetadata.blockNumber,
-            blockMetadata.blockDifficulty,
-            blockMetadata.blockRandom,
-            blockMetadata.blockGaslimit,
-            blockMetadata.blockChainId,
-            blockMetadata.blockBaseFee,
-            blockMetadata.blockGasUsed,
-            blockMetadata.blockBloom
-        );
+    ) public pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                blockMetadata.blockBeneficiary,
+                blockMetadata.blockTimestamp,
+                blockMetadata.blockNumber,
+                blockMetadata.blockDifficulty,
+                blockMetadata.blockRandom,
+                blockMetadata.blockGaslimit,
+                blockMetadata.blockChainId,
+                blockMetadata.blockBaseFee,
+                blockMetadata.blockGasUsed,
+                blockMetadata.blockBloom
+            );
     }
 
     struct BlockHashes {
@@ -51,8 +57,10 @@ contract Plonky2Verification {
         bytes32 curHash;
     }
 
-    function serializeBlockHashes(BlockHashes memory blockHashes) public pure {
-        abi.encodePacked(blockHashes.prevHashes, blockHashes.curHash);
+    function serializeBlockHashes(
+        BlockHashes memory blockHashes
+    ) public pure returns (bytes memory) {
+        return abi.encodePacked(blockHashes.prevHashes, blockHashes.curHash);
     }
 
     struct ExtraBlockData {
@@ -67,16 +75,17 @@ contract Plonky2Verification {
 
     function serializeExtraBlockData(
         ExtraBlockData memory extraBlockData
-    ) public pure {
-        abi.encodePacked(
-            extraBlockData.genesisStateTrieRoot,
-            extraBlockData.txnNumberBefore,
-            extraBlockData.txnNumber_After,
-            extraBlockData.gasUsedBefore,
-            extraBlockData.gasUsed_After,
-            extraBlockData.blockBloomBefore,
-            extraBlockData.blockBloomAfter
-        );
+    ) public pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                extraBlockData.genesisStateTrieRoot,
+                extraBlockData.txnNumberBefore,
+                extraBlockData.txnNumber_After,
+                extraBlockData.gasUsedBefore,
+                extraBlockData.gasUsed_After,
+                extraBlockData.blockBloomBefore,
+                extraBlockData.blockBloomAfter
+            );
     }
 
     struct PublicValues {
@@ -89,12 +98,49 @@ contract Plonky2Verification {
 
     function serializePublicValues(
         PublicValues memory publicValues
-    ) public pure {
-        serializeTrieRoots(publicValues.trieRootsBefore);
-        serializeTrieRoots(publicValues.trieRootsAfter);
-        serializeBlockMetadata(publicValues.blockMetadata);
-        serializeBlockHashes(publicValues.blockHashes);
-        serializeExtraBlockData(publicValues.extraBlockData);
+    ) public pure returns (bytes memory) {
+        bytes memory serializedTrieRootsBefore = serializeTrieRoots(
+            publicValues.trieRootsBefore
+        );
+        bytes memory serializedTrieRootsAfter = serializeTrieRoots(
+            publicValues.trieRootsAfter
+        );
+        bytes memory serializedBlockMetadata = serializeBlockMetadata(
+            publicValues.blockMetadata
+        );
+        bytes memory serializedBlockHashes = serializeBlockHashes(
+            publicValues.blockHashes
+        );
+        bytes memory serializedExtraBlockData = serializeExtraBlockData(
+            publicValues.extraBlockData
+        );
+
+        uint totalLength = serializedTrieRootsBefore.length +
+            serializedTrieRootsAfter.length +
+            serializedBlockMetadata.length +
+            serializedBlockHashes.length +
+            serializedExtraBlockData.length;
+
+        bytes memory toReturn = new bytes(totalLength);
+
+        uint counter = 0;
+        for (uint i = 0; i < serializedTrieRootsBefore.length; i++) {
+            toReturn[counter++] = serializedTrieRootsBefore[i];
+        }
+        for (uint i = 0; i < serializedTrieRootsAfter.length; i++) {
+            toReturn[counter++] = serializedTrieRootsAfter[i];
+        }
+        for (uint i = 0; i < serializedBlockMetadata.length; i++) {
+            toReturn[counter++] = serializedBlockMetadata[i];
+        }
+        for (uint i = 0; i < serializedBlockHashes.length; i++) {
+            toReturn[counter++] = serializedBlockHashes[i];
+        }
+        for (uint i = 0; i < serializedExtraBlockData.length; i++) {
+            toReturn[counter++] = serializedExtraBlockData[i];
+        }
+
+        return toReturn;
     }
 
     // Credit to https://ethereum.stackexchange.com/questions/7702/how-to-convert-byte-array-to-bytes32-in-solidity
@@ -105,6 +151,10 @@ contract Plonky2Verification {
             out |= bytes32(b[i] & 0xFF) >> (i * 8);
         }
         return out;
+    }
+
+    function verifyProof() public {
+        bytes memory serialized = serializePublicValues(dummyPublicValues);
     }
 
     constructor() {
@@ -212,7 +262,7 @@ contract Plonky2Verification {
             ]
         );
 
-        PublicValues memory dummyPublicValues = PublicValues(
+        dummyPublicValues = PublicValues(
             dummyTrieRootsBefore,
             dummyTrieRootsAfter,
             dummyBlockMetadata,
