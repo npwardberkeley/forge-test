@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
+import "forge-std/console.sol";
 
 contract Plonky2Verification {
     // SuccinctX 0xpolygonzero/plonky2-evm integration.
@@ -178,6 +179,8 @@ contract Plonky2Verification {
         requests[requestId] = Request(msg.sender);
         bytes memory input = serializePublicValues(dummyPublicValues);
 
+        console.log("Sending request");
+
         IFunctionGateway(FUNCTION_GATEWAY).request{value: msg.value}(
             FUNCTION_ID,
             input,
@@ -190,6 +193,9 @@ contract Plonky2Verification {
         require(msg.sender == FUNCTION_GATEWAY);
         uint256 requestId = abi.decode(context, (uint256));
         Request storage request = requests[requestId];
+
+        console.log("Processing request");
+
         // Process request here
         // (...)
         delete requests[requestId];
