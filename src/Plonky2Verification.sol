@@ -2,6 +2,20 @@
 pragma solidity ^0.8.13;
 
 contract Plonky2Verification {
+    // SuccinctX 0xpolygonzero/plonky2-evm integration.
+    // From https://alpha.succinct.xyz/0xpolygonzero/plonky2-evm/integrate
+    address public constant FUNCTION_GATEWAY = 0xE304f6B116bE5e43424cEC36a5eFd0B642E0dC95;
+    bytes32 public constant FUNCTION_ID = 0xab5ee25ac7b527b26a990f4539ab99b231150f6b9ded1071e8107a37f1a58c93;
+
+    uint256 public nextRequestId = 1;
+    mapping(uint256 => Request) requests;
+
+    struct Request {
+        address sender;
+        // Any additional request context needed can go here
+        // (...)
+    }
+
     PublicValues private dummyPublicValues;
 
     struct TrieRoots {
@@ -157,6 +171,31 @@ contract Plonky2Verification {
         bytes memory serialized = serializePublicValues(dummyPublicValues);
     }
 
+    // SuccinctX 0xpolygonzero/plonky2-evm integration.
+    // From https://alpha.succinct.xyz/0xpolygonzero/plonky2-evm/integrate
+    function request() external payable {
+        uint256 requestId = nextRequestId++;
+        requests[requestId] = Request(msg.sender);
+        bytes memory input = serializePublicValues(dummyPublicValues);
+
+        IFunctionGateway(FUNCTION_GATEWAY).request{value: msg.value}(
+            FUNCTION_ID,
+            input,
+            this.handleCallback.selector,
+            abi.encode(requestId)
+        );
+    }
+
+    function handleCallback(bytes memory output, bytes memory context) external {
+        require(msg.sender == FUNCTION_GATEWAY);
+        uint256 requestId = abi.decode(context, (uint256));
+        Request storage request = requests[requestId];
+        // Process request here
+        // (...)
+        delete requests[requestId];
+    }
+
+
     constructor() {
         TrieRoots memory dummyTrieRootsBefore = TrieRoots(
             bytesToBytes32(
@@ -270,4 +309,13 @@ contract Plonky2Verification {
             dummyExtraBlockData
         );
     }
+}
+
+// SuccinctX 0xpolygonzero/plonky2-evm integration.
+// From https://alpha.succinct.xyz/0xpolygonzero/plonky2-evm/integrate
+interface IFunctionGateway {
+    function request(bytes32 functionId, bytes memory input, bytes4 callbackSelector, bytes memory context)
+        external
+        payable
+        returns (bytes32);
 }
