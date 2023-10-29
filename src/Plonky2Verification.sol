@@ -1,21 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
-import "forge-std/console.sol";
+import "./ISuccinctGateway.sol";
 
 contract Plonky2Verification {
     // SuccinctX 0xpolygonzero/plonky2-evm integration.
     // From https://alpha.succinct.xyz/0xpolygonzero/plonky2-evm/integrate
-    address public constant FUNCTION_GATEWAY = 0xE304f6B116bE5e43424cEC36a5eFd0B642E0dC95;
-    bytes32 public constant FUNCTION_ID = 0xab5ee25ac7b527b26a990f4539ab99b231150f6b9ded1071e8107a37f1a58c93;
+    address public constant FUNCTION_GATEWAY =
+        0x6e4f1e9eA315EBFd69d18C2DB974EEf6105FB803;
+    bytes32 public constant FUNCTION_ID =
+        0x69fffb3933b7ad192aa9258e9ab9bf49e7cd5ce7bef566da4566ff9ce062e076;
 
-    uint256 public nextRequestId = 1;
-    mapping(uint256 => Request) requests;
-
-    struct Request {
-        address sender;
-        // Any additional request context needed can go here
-        // (...)
-    }
+    event Requested(bytes32 inputHash, bytes input);
+    event ProofVerified(bytes32 inputHash, bytes output);
 
     PublicValues private dummyPublicValues;
 
@@ -168,39 +164,34 @@ contract Plonky2Verification {
         return out;
     }
 
-    function verifyProof() public {
-        bytes memory serialized = serializePublicValues(dummyPublicValues);
-    }
-
     // SuccinctX 0xpolygonzero/plonky2-evm integration.
     // From https://alpha.succinct.xyz/0xpolygonzero/plonky2-evm/integrate
     function request() external payable {
-        uint256 requestId = nextRequestId++;
-        requests[requestId] = Request(msg.sender);
         bytes memory input = serializePublicValues(dummyPublicValues);
+        bytes32 inputHash = sha256(input);
 
-        console.log("Sending request");
-
-        IFunctionGateway(FUNCTION_GATEWAY).request{value: msg.value}(
+        ISuccinctGateway(FUNCTION_GATEWAY).requestCallback{value: msg.value}(
             FUNCTION_ID,
             input,
+            abi.encode(inputHash),
             this.handleCallback.selector,
-            abi.encode(requestId)
+            200_000
         );
+
+        emit Requested(inputHash, input);
     }
 
-    function handleCallback(bytes memory output, bytes memory context) external {
-        require(msg.sender == FUNCTION_GATEWAY);
-        uint256 requestId = abi.decode(context, (uint256));
-        Request storage request = requests[requestId];
-
-        console.log("Processing request");
-
-        // Process request here
-        // (...)
-        delete requests[requestId];
+    function handleCallback(
+        bytes memory output,
+        bytes memory context
+    ) external {
+        require(
+            msg.sender == FUNCTION_GATEWAY &&
+                ISuccinctGateway(FUNCTION_GATEWAY).isCallback()
+        );
+        bytes32 inputHash = abi.decode(context, (bytes32));
+        emit ProofVerified(inputHash, output);
     }
-
 
     constructor() {
         TrieRoots memory dummyTrieRootsBefore = TrieRoots(
@@ -315,13 +306,4 @@ contract Plonky2Verification {
             dummyExtraBlockData
         );
     }
-}
-
-// SuccinctX 0xpolygonzero/plonky2-evm integration.
-// From https://alpha.succinct.xyz/0xpolygonzero/plonky2-evm/integrate
-interface IFunctionGateway {
-    function request(bytes32 functionId, bytes memory input, bytes4 callbackSelector, bytes memory context)
-        external
-        payable
-        returns (bytes32);
 }
